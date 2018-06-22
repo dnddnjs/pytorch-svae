@@ -124,7 +124,7 @@ def train(epoch, step):
                    loss.item(), NLL_loss.item() / batch_size,
                    KL_loss.item() / batch_size, KL_weight))
 
-    print('====> Epoch: {} Average loss: {:.4f} steps: %d'.format(
+    print('====> Epoch: {} Average loss: {:.4f} steps: {}'.format(
           epoch, train_loss * args.batch_size / len(data_loader.dataset), step))
 
     checkpoint_path = os.path.join(args.save_model_path, "model_epoch_%i" % (epoch))
