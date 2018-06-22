@@ -2,9 +2,7 @@ from __future__ import print_function
 import argparse
 import torch
 import torch.utils.data
-from torch import nn, optim
-from torch.nn import functional as F
-import torch.nn.utils.rnn as rnn_utils
+from torch import optim
 from torch.utils.data import DataLoader
 
 import os
@@ -13,6 +11,7 @@ from collections import OrderedDict
 from multiprocessing import cpu_count
 
 from ptb import PTB
+from model import SentenceVAE
 from utils import to_var
 
 parser = argparse.ArgumentParser(description='Sentence VAE Example')
@@ -51,80 +50,12 @@ for split in splits:
         min_occ=args.min_occ
     )
 
+vocab_size = datasets['train'].vocab_size
+sos_idx = datasets['train'].sos_idx
+eos_idx = datasets['train'].eos_idx
+pad_idx = datasets['train'].pad_idx
 
-class SentenceVAE(nn.Module):
-    def __init__(self):
-        super(SentenceVAE, self).__init__()
-        if torch.cuda.is_available():
-            self.tensor = torch.cuda.FloatTensor
-        else:
-            self.tensor = torch.Tensor
-
-        self.max_sequence_length = 60
-        self.vocab_size = datasets['train'].vocab_size
-        self.sos_idx = datasets['train'].sos_idx
-        self.eos_idx = datasets['train'].eos_idx
-        self.pad_idx = datasets['train'].pad_idx
-
-        self.z_size = 16
-        self.h_size = 256
-        self.emb_size = 300
-
-        self.emb = nn.Embedding(self.vocab_size, self.emb_size)
-        self.word_dropout = nn.Dropout(p=0.5)
-
-        self.encoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
-        self.encode_fc1 = nn.Linear(self.h_size, self.z_size)
-        self.encode_fc2 = nn.Linear(self.h_size, self.z_size)
-
-        self.decode_fc1 = nn.Linear(self.z_size, self.h_size)
-        self.decoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
-        self.decode_fc2 = nn.Linear(self.h_size, self.vocab_size)
-
-    def encode(self, x, len):
-        sorted_len, sorted_idx = torch.sort(len, descending=True)
-        x = x[sorted_idx]
-
-        x_emb = self.emb(x)
-        x = rnn_utils.pack_padded_sequence(x_emb, sorted_len.data.tolist(),
-                                           batch_first=True)
-        _, h = self.encoder_rnn(x)
-        h = h.squeeze()
-        mu = self.encode_fc1(h)
-        logvar = self.encode_fc2(h)
-        return mu, logvar, x_emb, sorted_len, sorted_idx
-
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return eps.mul(std).add_(mu)
-
-    def decode(self, z, input_emb, sorted_len, sorted_idx):
-        h = self.decode_fc1(z)
-        h = h.unsqueeze(0)
-
-        input_emb = self.word_dropout(input_emb)
-        y = rnn_utils.pack_padded_sequence(input_emb, sorted_len.data.tolist(),
-                                           batch_first=True)
-        out, _ = self.decoder_rnn(y, h)
-
-        out = rnn_utils.pad_packed_sequence(out, batch_first=True)[0]
-        out = out.contiguous()
-        _, reversed_idx = torch.sort(sorted_idx)
-        out = out[reversed_idx]
-
-        logp = F.log_softmax(self.decode_fc2(out.view(-1, out.size(2))), dim=-1)
-        logp = logp.view(out.size(0), out.size(1), self.emb.num_embeddings)
-        return logp
-
-    def forward(self, x, len):
-        mu, logvar, input_emb, sorted_len, sorted_idx = self.encode(x, len)
-        z = self.reparameterize(mu, logvar)
-        logp = self.decode(z, input_emb, sorted_len, sorted_idx)
-        return logp, mu, logvar, z
-
-
-model = SentenceVAE().to(device)
+model = SentenceVAE(vocab_size, sos_idx, eos_idx, pad_idx).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 
@@ -205,7 +136,7 @@ def train(epoch, step):
     return step
 
 
-def test(epoch, step):
+def test(step):
     model.eval()
     test_loss = 0
 
@@ -242,4 +173,4 @@ def test(epoch, step):
 step = 0
 for epoch in range(1, args.epochs + 1):
     step = train(epoch, step)
-    test(epoch, step)
+    test(step)
