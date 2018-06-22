@@ -41,8 +41,8 @@ model = SentenceVAE(
     pad_idx=w2i['<pad>']
 )
 
-model.load_state_dict(torch.load("bin/E7.pytorch"))
-print("Model loaded from %s" % ("bin/E7.pytorch"))
+model.load_state_dict(torch.load("bin/E4.pytorch"))
+print("Model loaded from %s" % ("bin/E4.pytorch"))
 
 if torch.cuda.is_available():
     model = model.cuda()
