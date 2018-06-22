@@ -16,13 +16,6 @@ parser.add_argument('--data_dir', type=str, default='data')
 parser.add_argument('--create_data', action='store_true')
 parser.add_argument('--min_occ', type=int, default=1)
 
-parser.add_argument('--epochs', type=int, default=10)
-parser.add_argument('--batch_size', type=int, default=32)
-
-parser.add_argument('--k', type=float, default=0.0025)
-parser.add_argument('--x0', type=int, default=2500)
-parser.add_argument('--log_interval', type=int, default=50)
-parser.add_argument('--save_model_path', type=str, default='bin')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
 

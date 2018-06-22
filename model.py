@@ -23,12 +23,12 @@ class SentenceVAE(nn.Module):
         self.eos_idx = eos_idx
         self.pad_idx = pad_idx
 
-        self.z_size = 16
-        self.h_size = 256
-        self.emb_size = 300
+        self.z_size = 13
+        self.h_size = 191
+        self.emb_size = 353
 
         self.emb = nn.Embedding(self.vocab_size, self.emb_size)
-        self.word_dropout = nn.Dropout(p=0.5)
+        self.word_dropout = nn.Dropout(p=0.62)
 
         self.encoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
         self.encode_fc1 = nn.Linear(self.h_size, self.z_size)
@@ -43,7 +43,8 @@ class SentenceVAE(nn.Module):
         x = x[sorted_idx]
 
         x_emb = self.emb(x)
-        x = rnn_utils.pack_padded_sequence(x_emb, sorted_len.data.tolist(),
+        x = rnn_utils.pack_padded_sequence(x_emb,
+                                           sorted_len.data.tolist(),
                                            batch_first=True)
         _, h = self.encoder_rnn(x)
         h = h.squeeze()
@@ -112,7 +113,8 @@ class SentenceVAE(nn.Module):
 
             logits = self.decode_fc2(out)
 
-            x = self._sample(logits)
+            _, x = torch.topk(logits, 1, dim=-1)
+            x = x.squeeze()
 
             # save next input
             running_latest = generations[sequence_running]
@@ -140,16 +142,9 @@ class SentenceVAE(nn.Module):
                 x = x[running_seqs]
                 h = h[:, running_seqs]
 
-                running_seqs = torch.arange(0, len(running_seqs), out=self.tensor()).long()
+                running_seqs = torch.arange(0, len(running_seqs),
+                                            out=self.tensor()).long()
 
             t += 1
 
         return generations, z
-
-    def _sample(self, dist, mode='greedy'):
-
-        if mode == 'greedy':
-            _, sample = torch.topk(dist, 1, dim=-1)
-        sample = sample.squeeze()
-
-        return sample

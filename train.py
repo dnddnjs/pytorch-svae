@@ -28,7 +28,7 @@ parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--k', type=float, default=0.0025)
 parser.add_argument('--x0', type=int, default=2500)
 parser.add_argument('--log_interval', type=int, default=50)
-parser.add_argument('--save_model_path', type=str, default='bin')
+parser.add_argument('--save_model_path', type=str, default='model')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
 
@@ -99,15 +99,12 @@ def train(epoch, step):
     train_loss = 0
     for batch_idx, batch in enumerate(data_loader):
         batch_size = batch['input'].size(0)
-
         for k, v in batch.items():
             if torch.is_tensor(v):
                 batch[k] = to_var(v)
 
-        # Forward pass
         logp, mu, logvar, z = model(batch['input'], batch['length'])
 
-        # loss calculation
         loss, NLL_loss, KL_loss, KL_weight = loss_function(logp, batch['target'],
                                                            batch['length'], mu,
                                                            logvar, step)
@@ -121,16 +118,16 @@ def train(epoch, step):
         step += 1
 
         if batch_idx % args.log_interval == 0:
-            print(
-                "Train Batch %04d/%i, Loss %9.4f, NLL-Loss %9.4f, KL-Loss %9.4f, KL-Weight %6.3f"
-                % (batch_idx, len(data_loader) - 1,
-                   loss.data[0], NLL_loss.data[0] / batch_size,
-                   KL_loss.data[0] / batch_size, KL_weight))
+            print('Train Epoch {} [{}/{}] Loss {:.2f} | NLL {:.2f}'
+                  ' | KL {:.2f} | Beta {:.3f}'.format(epoch,
+                   batch_idx * batch_size, len(data_loader.dataset),
+                   loss.item(), NLL_loss.item() / batch_size,
+                   KL_loss.item() / batch_size, KL_weight))
 
-    print('====> Epoch: {} Average loss: {:.4f}'.format(
-          epoch, train_loss * args.batch_size / len(data_loader.dataset)))
+    print('====> Epoch: {} Average loss: {:.4f} steps: {:.f}'.format(
+          epoch, train_loss * args.batch_size / len(data_loader.dataset), step))
 
-    checkpoint_path = os.path.join(args.save_model_path, "E%i.pytorch" % (epoch))
+    checkpoint_path = os.path.join(args.save_model_path, "model_epoch_%i" % (epoch))
     torch.save(model.state_dict(), checkpoint_path)
     print("Model saved at %s" % checkpoint_path)
     return step
@@ -154,16 +151,10 @@ def test(step):
                 if torch.is_tensor(v):
                     batch[k] = to_var(v)
 
-            # Forward pass
             logp, mu, logvar, z = model(batch['input'], batch['length'])
 
-            # loss calculation
-            loss, NLL_loss, KL_loss, KL_weight = loss_function(logp,
-                                                               batch['target'],
-                                                               batch['length'],
-                                                               mu,
-                                                               logvar, step)
-
+            loss, _, _, _ = loss_function(logp, batch['target'], batch['length'],
+                                          mu, logvar, step)
             test_loss += loss.item()
 
     test_loss /= len(data_loader.dataset)
