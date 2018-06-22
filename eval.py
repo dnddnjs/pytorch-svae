@@ -34,8 +34,8 @@ model = SentenceVAE(
     pad_idx=w2i['<pad>']
 )
 
-model.load_state_dict(torch.load("bin/E4.pytorch"))
-print("Model loaded from %s" % ("bin/E4.pytorch"))
+model.load_state_dict(torch.load(args.load_checkpoint))
+print("Model loaded from %s" % (args.load_checkpoint))
 
 if torch.cuda.is_available():
     model = model.cuda()
@@ -46,8 +46,8 @@ samples, z = model.inference(n=args.num_samples)
 print('----------SAMPLES----------')
 print(*idx2word(samples, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
 
-z1 = torch.randn([16]).numpy()
-z2 = torch.randn([16]).numpy()
+z1 = torch.randn([13]).numpy()
+z2 = torch.randn([13]).numpy()
 z = to_var(torch.from_numpy(interpolate(start=z1, end=z2, steps=8)).float())
 samples, _ = model.inference(z=z)
 print('-------INTERPOLATION-------')
