@@ -79,6 +79,10 @@ class SentenceVAE(nn.Module):
 
         t = 0
         x = torch.Tensor(1).fill_(self.sos_idx).long()
+
+        if torch.cuda.is_available():
+            x = x.cuda()
+
         while t < self.max_sequence_length:
             x = x.unsqueeze(1)
             input_emb = self.emb(x)
