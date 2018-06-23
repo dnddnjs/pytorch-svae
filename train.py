@@ -94,6 +94,8 @@ def train(epoch, step):
     train_loss = 0
     for batch_idx, batch in enumerate(data_loader):
         batch_size = batch['input'].size(0)
+        if torch.cuda.is_available():
+            batch = batch.cuda()
         logp, mu, logvar, z = model(batch['input'])
         loss, NLL_loss, KL_loss, KL_weight = loss_function(logp, batch['target'],
                                                            mu, logvar, step)
