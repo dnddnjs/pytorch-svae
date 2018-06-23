@@ -69,6 +69,8 @@ class SentenceVAE(nn.Module):
     def inference(self, z=None):
         if z is None:
             z = torch.randn([1, self.z_size])
+            if torch.cuda.is_available():
+                z = z.cuda()
 
         h = self.decode_fc1(z)
         h = h.unsqueeze(0)
