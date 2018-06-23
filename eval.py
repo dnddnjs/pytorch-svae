@@ -63,6 +63,8 @@ print('-------RECONSTRUCTION-------')
 sample = datasets['test'].data['300']['input']
 print('sample 1: ' + idx2word(sample[1:], i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
 input = torch.Tensor(sample).long()
+if torch.cuda.is_available():
+    input = input.cuda()
 input = input.unsqueeze(0)
 _, _, _, z = model(input)
 recon, z = model.inference(z=z)
@@ -72,6 +74,8 @@ print('reconst : ' + idx2word(recon, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
 sample = datasets['test'].data['1500']['input']
 print('sample 2: ' + idx2word(sample[1:], i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
 input = torch.Tensor(sample).long()
+if torch.cuda.is_available():
+    input = input.cuda()
 input = input.unsqueeze(0)
 _, _, _, z = model(input)
 recon, z = model.inference(z=z)
