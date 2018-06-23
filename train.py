@@ -145,9 +145,9 @@ def test(step):
                 if torch.is_tensor(v):
                     batch[k] = to_var(v)
 
-            logp, mu, logvar, z = model(batch['input'], batch['length'])
+            logp, mu, logvar, z = model(batch['input'])
 
-            loss, _, _, _ = loss_function(logp, batch['target'], batch['length'],
+            loss, _, _, _ = loss_function(logp, batch['target'],
                                           mu, logvar, step)
             test_loss += loss.item()
 
