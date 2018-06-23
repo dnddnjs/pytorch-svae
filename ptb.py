@@ -32,7 +32,6 @@ class PTB(Dataset):
         else:
             self._load_data()
 
-
     def __len__(self):
         return len(self.data)
 

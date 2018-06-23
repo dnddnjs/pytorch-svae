@@ -3,6 +3,7 @@ import argparse
 import torch
 import torch.utils.data
 from torch import optim
+from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
 import os
@@ -34,7 +35,7 @@ parser.add_argument('--no-cuda', action='store_true', default=False,
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
-torch.manual_seed(args.seed)
+# torch.manual_seed(args.seed)
 device = torch.device("cuda" if args.cuda else "cpu")
 
 splits = ['train', 'valid']
@@ -65,14 +66,13 @@ def kl_anneal_function(step):
     return weight
 
 
-NLL = torch.nn.NLLLoss(size_average=False,
-                       ignore_index=datasets['train'].pad_idx)
+# loss = torch.nn.CrossEntropyLoss(size_average=False)
 
 
 def loss_function(reconx, x, mu, logvar, step):
     x = x.view(-1)
     reconx = reconx.view(-1, reconx.size(2))
-    NLL_loss = NLL(reconx, x)
+    NLL_loss = F.cross_entropy(reconx, x, size_average=False)
 
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     beta = kl_anneal_function(step)
@@ -107,11 +107,11 @@ def train(epoch, step):
                                            "model_epoch_%i" % (epoch))
             torch.save(model.state_dict(), checkpoint_path)
             print("Model saved at %s" % checkpoint_path)
-            
 
         optimizer.zero_grad()
         loss.backward()
         train_loss += loss.item()
+        torch.nn.utils.clip_grad_norm(model.parameters(), 5)
         optimizer.step()
         step += 1
 

@@ -22,11 +22,11 @@ class SentenceVAE(nn.Module):
         self.pad_idx = pad_idx
 
         self.z_size = 13
-        self.h_size = 500
+        self.h_size = 191
         self.emb_size = 353
 
         self.emb = nn.Embedding(self.vocab_size, self.emb_size)
-        self.word_dropout = nn.Dropout(p=1)
+        self.word_dropout = nn.Dropout(p=0.5)
 
         self.encoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
         self.encode_fc1 = nn.Linear(self.h_size, self.z_size)
@@ -58,11 +58,9 @@ class SentenceVAE(nn.Module):
 
         x_emb = self.word_dropout(x_emb)
         out, _ = self.decoder_rnn(x_emb, h)
-        out = out.contiguous()
-        logit = self.decode_fc2(out.view(-1, out.size(2)))
-        logp = F.log_softmax(logit, dim=-1)
-        logp = logp.view(out.size(0), out.size(1), self.vocab_size)
-        return logp
+        logit = self.decode_fc2(out)
+        prob = F.softmax(logit, dim=-1)
+        return prob
 
     def forward(self, x):
         mu, logvar, x_emb = self.encode(x)
