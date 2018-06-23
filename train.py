@@ -102,24 +102,18 @@ def train(epoch, step):
                                                            mu, logvar, step)
 
         loss = loss / batch_size
-
-        checkpoint_path = os.path.join(args.save_model_path,
-                                       "model_epoch_%i" % (epoch))
-        torch.save(model.state_dict(), checkpoint_path)
-        print("Model saved at %s" % checkpoint_path)
+        if step == 10:
+            checkpoint_path = os.path.join(args.save_model_path,
+                                           "model_epoch_%i" % (epoch))
+            torch.save(model.state_dict(), checkpoint_path)
+            print("Model saved at %s" % checkpoint_path)
+            
 
         optimizer.zero_grad()
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
         step += 1
-
-        checkpoint_path = os.path.join(args.save_model_path,
-                                       "model_epoch_%i" % (epoch))
-        torch.save(model.state_dict(), checkpoint_path)
-        print("Model saved at %s" % checkpoint_path)
-
-        asdf
 
         if batch_idx % args.log_interval == 0:
             print('Train Epoch {} [{}/{}] Loss {:.2f} | NLL {:.2f}'
