@@ -25,7 +25,7 @@ class SentenceVAE(nn.Module):
         self.emb_size = 353
 
         self.emb = nn.Embedding(self.vocab_size, self.emb_size)
-        self.word_dropout = nn.Dropout(p=0.62)
+        self.word_dropout = nn.Dropout(p=1)
 
         self.encoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
         self.encode_fc1 = nn.Linear(self.h_size, self.z_size)
