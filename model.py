@@ -22,7 +22,7 @@ class SentenceVAE(nn.Module):
         self.pad_idx = pad_idx
 
         self.z_size = 13
-        self.h_size = 191
+        self.h_size = 500
         self.emb_size = 353
 
         self.emb = nn.Embedding(self.vocab_size, self.emb_size)
