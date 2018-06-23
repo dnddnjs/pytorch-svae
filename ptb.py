@@ -119,6 +119,7 @@ class PTB(Dataset):
                 target = [self.w2i.get(w, self.w2i['<unk>']) for w in target]
 
                 id = len(data)
+                print(id)
                 data[id]['input'] = input
                 data[id]['target'] = target
                 data[id]['length'] = length

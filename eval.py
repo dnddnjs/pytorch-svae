@@ -1,9 +1,10 @@
 import json
 import torch
 import argparse
-
+from ptb import PTB
 from model import SentenceVAE
-from utils import to_var, idx2word, interpolate
+from utils import idx2word, interpolate
+from collections import OrderedDict
 
 parser = argparse.ArgumentParser(description='Sentence VAE Example')
 
@@ -42,13 +43,47 @@ if torch.cuda.is_available():
 
 model.eval()
 
-samples, z = model.inference(n=args.num_samples)
 print('----------SAMPLES----------')
-print(*idx2word(samples, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
+for i in range(5):
+    sample, z = model.inference()
+    sample = sample.cpu().numpy()
+    print(idx2word(sample, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
 
+datasets = OrderedDict()
+datasets['test'] = PTB(
+    data_dir=args.data_dir,
+    split='test',
+    create_data=args.create_data,
+    max_sequence_length=60,
+    min_occ=args.min_occ
+)
+
+print('-------RECONSTRUCTION-------')
+
+sample = datasets['test'].data['300']['input']
+print('sample 1: ' + idx2word(sample[1:], i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
+input = torch.Tensor(sample).long()
+input = input.unsqueeze(0)
+_, _, _, z = model(input)
+recon, z = model.inference(z=z)
+recon = recon.cpu().numpy()
+print('reconst : ' + idx2word(recon, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
+
+sample = datasets['test'].data['1500']['input']
+print('sample 2: ' + idx2word(sample[1:], i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
+input = torch.Tensor(sample).long()
+input = input.unsqueeze(0)
+_, _, _, z = model(input)
+recon, z = model.inference(z=z)
+recon = recon.cpu().numpy()
+print('reconst : ' + idx2word(recon, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
+
+'''
 z1 = torch.randn([13]).numpy()
 z2 = torch.randn([13]).numpy()
-z = to_var(torch.from_numpy(interpolate(start=z1, end=z2, steps=8)).float())
+z = torch.from_numpy(interpolate(start=z1, end=z2, steps=8)).float()
 samples, _ = model.inference(z=z)
-print('-------INTERPOLATION-------')
+
 print(*idx2word(samples, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
+'''
+

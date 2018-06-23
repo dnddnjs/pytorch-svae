@@ -12,7 +12,6 @@ from multiprocessing import cpu_count
 
 from ptb import PTB
 from model import SentenceVAE
-from utils import to_var
 
 parser = argparse.ArgumentParser(description='Sentence VAE Example')
 
@@ -95,10 +94,6 @@ def train(epoch, step):
     train_loss = 0
     for batch_idx, batch in enumerate(data_loader):
         batch_size = batch['input'].size(0)
-        for k, v in batch.items():
-            if torch.is_tensor(v):
-                batch[k] = to_var(v)
-
         logp, mu, logvar, z = model(batch['input'])
         loss, NLL_loss, KL_loss, KL_weight = loss_function(logp, batch['target'],
                                                            mu, logvar, step)
@@ -141,12 +136,7 @@ def test(step):
 
     with torch.no_grad():
         for batch_index, batch in enumerate(data_loader):
-            for k, v in batch.items():
-                if torch.is_tensor(v):
-                    batch[k] = to_var(v)
-
             logp, mu, logvar, z = model(batch['input'])
-
             loss, _, _, _ = loss_function(logp, batch['target'],
                                           mu, logvar, step)
             test_loss += loss.item()
