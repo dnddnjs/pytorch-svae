@@ -54,7 +54,7 @@ sos_idx = datasets['train'].sos_idx
 eos_idx = datasets['train'].eos_idx
 pad_idx = datasets['train'].pad_idx
 
-model = SentenceVAE(vocab_size, sos_idx, eos_idx, pad_idx).to(device)
+model = SentenceVAE(vocab_size, sos_idx, eos_idx, pad_idx, training=True).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 

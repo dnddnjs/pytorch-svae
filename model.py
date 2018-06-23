@@ -6,13 +6,14 @@ from torch.nn import functional as F
 
 
 class SentenceVAE(nn.Module):
-    def __init__(self, vocab_size, sos_idx, eos_idx, pad_idx):
+    def __init__(self, vocab_size, sos_idx, eos_idx, pad_idx, training=False):
         super(SentenceVAE, self).__init__()
         if torch.cuda.is_available():
             self.tensor = torch.cuda.FloatTensor
         else:
             self.tensor = torch.Tensor
 
+        self.training = training
         self.max_sequence_length = 60
 
         self.vocab_size = vocab_size
@@ -44,9 +45,12 @@ class SentenceVAE(nn.Module):
         return mu, logvar, x_emb
 
     def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return eps.mul(std).add_(mu)
+        if self.training:
+            std = torch.exp(0.5 * logvar)
+            eps = torch.randn_like(std)
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
 
     def decode(self, z, x_emb):
         h = self.decode_fc1(z)
