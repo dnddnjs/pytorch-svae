@@ -38,48 +38,35 @@ class SentenceVAE(nn.Module):
         self.decoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
         self.decode_fc2 = nn.Linear(self.h_size, self.vocab_size)
 
-    def encode(self, x, len):
-        sorted_len, sorted_idx = torch.sort(len, descending=True)
-        x = x[sorted_idx]
-
+    def encode(self, x):
         x_emb = self.emb(x)
-        x = rnn_utils.pack_padded_sequence(x_emb,
-                                           sorted_len.data.tolist(),
-                                           batch_first=True)
-        _, h = self.encoder_rnn(x)
+        _, h = self.encoder_rnn(x_emb)
         h = h.squeeze()
         mu = self.encode_fc1(h)
         logvar = self.encode_fc2(h)
-        return mu, logvar, x_emb, sorted_len, sorted_idx
+        return mu, logvar, x_emb
 
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return eps.mul(std).add_(mu)
 
-    def decode(self, z, input_emb, sorted_len, sorted_idx):
+    def decode(self, z, x_emb):
         h = self.decode_fc1(z)
         h = h.unsqueeze(0)
 
-        input_emb = self.word_dropout(input_emb)
-        y = rnn_utils.pack_padded_sequence(input_emb, sorted_len.data.tolist(),
-                                           batch_first=True)
-        out, _ = self.decoder_rnn(y, h)
-
-        out = rnn_utils.pad_packed_sequence(out, batch_first=True)[0]
+        x_emb = self.word_dropout(x_emb)
+        out, _ = self.decoder_rnn(x_emb, h)
         out = out.contiguous()
-        _, reversed_idx = torch.sort(sorted_idx)
-        out = out[reversed_idx]
-
         logit = self.decode_fc2(out.view(-1, out.size(2)))
         logp = F.log_softmax(logit, dim=-1)
         logp = logp.view(out.size(0), out.size(1), self.emb.num_embeddings)
         return logp
 
-    def forward(self, x, len):
-        mu, logvar, input_emb, sorted_len, sorted_idx = self.encode(x, len)
+    def forward(self, x):
+        mu, logvar, x_emb = self.encode(x)
         z = self.reparameterize(mu, logvar)
-        logp = self.decode(z, input_emb, sorted_len, sorted_idx)
+        logp = self.decode(z, x_emb)
         return logp, mu, logvar, z
 
     def inference(self, n=4, z=None):

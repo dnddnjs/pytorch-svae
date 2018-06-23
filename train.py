@@ -70,15 +70,11 @@ NLL = torch.nn.NLLLoss(size_average=False,
                        ignore_index=datasets['train'].pad_idx)
 
 
-def loss_function(reconx, x, length, mu, logvar, step):
-    # cut-off unnecessary padding from target, and flatten
-    x = x[:, :torch.max(length).data].contiguous().view(-1)
+def loss_function(reconx, x, mu, logvar, step):
+    x = x.view(-1)
     reconx = reconx.view(-1, reconx.size(2))
-
-    # Negative Log Likelihood
     NLL_loss = NLL(reconx, x)
 
-    # KL Divergence
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     beta = kl_anneal_function(step)
     loss = NLL_loss + beta * KLD
@@ -103,11 +99,9 @@ def train(epoch, step):
             if torch.is_tensor(v):
                 batch[k] = to_var(v)
 
-        logp, mu, logvar, z = model(batch['input'], batch['length'])
-
+        logp, mu, logvar, z = model(batch['input'])
         loss, NLL_loss, KL_loss, KL_weight = loss_function(logp, batch['target'],
-                                                           batch['length'], mu,
-                                                           logvar, step)
+                                                           mu, logvar, step)
 
         loss = loss / batch_size
 

@@ -1,7 +1,6 @@
 import os
 import io
 import json
-import torch
 import numpy as np
 from collections import defaultdict
 from torch.utils.data import Dataset
@@ -9,10 +8,9 @@ from nltk.tokenize import TweetTokenizer
 
 from utils import OrderedCounter
 
+
 class PTB(Dataset):
-
     def __init__(self, data_dir, split, create_data, **kwargs):
-
         super().__init__()
         self.data_dir = data_dir
         self.split = split
