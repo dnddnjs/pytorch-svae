@@ -82,7 +82,6 @@ criterion = torch.nn.NLLLoss(size_average=False, ignore_index=pad_idx)
 def loss_function(reconx, x, mu, logvar, step):
     x = x.view(-1)
     reconx = reconx.view(-1, reconx.size(2))
-    print(x[5], torch.argmax(reconx[5]))
     NLL_loss = criterion(reconx, x)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     beta = kl_anneal_function(step)
