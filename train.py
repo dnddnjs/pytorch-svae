@@ -57,7 +57,10 @@ eos_idx = datasets['train'].eos_idx
 pad_idx = datasets['train'].pad_idx
 
 embedding = KeyedVectors.load('model/pretrained_embedding')
-weights = torch.FloatTensor(embedding.syn0)
+if args.cuda:
+    weights = torch.FloatTensor(embedding.syn0).cuda()
+else:
+    weights = torch.FloatTensor(embedding.syn0)
 
 model = SentenceVAE(weights.size(0), sos_idx, eos_idx, pad_idx, training=True).to(device)
 
