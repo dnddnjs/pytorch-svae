@@ -23,11 +23,10 @@ class SentenceVAE(nn.Module):
 
         self.z_size = 13
         self.h_size = 191
-        self.emb_size = 353
+        self.emb_size = 300
 
         self.emb = nn.Embedding(self.vocab_size, self.emb_size)
-        self.emb.weight = nn.Parameter(torch.FloatTensor(
-            self.vocab_size, self.emb_size).uniform_(-1, 1))
+
         self.word_dropout = nn.Dropout(p=0.5)
 
         self.encoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
@@ -40,6 +39,7 @@ class SentenceVAE(nn.Module):
 
     def encode(self, x):
         x_emb = self.emb(x)
+        x_emb.detach()
         _, h = self.encoder_rnn(x_emb)
         h = h.view(h.size(1), h.size(2))
         mu = self.encode_fc1(h)
@@ -92,13 +92,13 @@ class SentenceVAE(nn.Module):
             out, h = self.decoder_rnn(input_emb, h)
             logits = self.decode_fc2(out)
 
-            _, x = torch.topk(logits, 1, dim=-1)
-            x = x[0][0]
+            x = torch.argmax(logits, dim=-1)
+            x = x[0]
             if x[0] == 3:
                 output = output[:t]
                 break
             else:
-                output[t] = x
+                output[t] = x[0]
             t += 1
 
         return output, z

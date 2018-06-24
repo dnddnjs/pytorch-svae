@@ -3,8 +3,9 @@ import argparse
 import torch
 import torch.utils.data
 from torch import optim
-from torch.nn import functional as F
+from torch import nn
 from torch.utils.data import DataLoader
+from gensim.models import KeyedVectors
 
 import os
 import numpy as np
@@ -50,12 +51,15 @@ for split in splits:
         min_occ=args.min_occ
     )
 
-vocab_size = datasets['train'].vocab_size
+# vocab_size = datasets['train'].vocab_size
 sos_idx = datasets['train'].sos_idx
 eos_idx = datasets['train'].eos_idx
 pad_idx = datasets['train'].pad_idx
 
-model = SentenceVAE(vocab_size, sos_idx, eos_idx, pad_idx, training=True).to(device)
+embedding = KeyedVectors.load('model/pretrained_embedding')
+weights = torch.FloatTensor(embedding.syn0)
+
+model = SentenceVAE(weights.size(0), sos_idx, eos_idx, pad_idx, training=True).to(device)
 
 
 def init_weights(m):
@@ -64,9 +68,9 @@ def init_weights(m):
         m.bias.data.fill_(0)
 
 model.apply(init_weights)
-
-
-optimizer = optim.Adam(model.parameters(), lr=1e-5)
+model.emb = nn.Embedding.from_pretrained(weights)
+optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()),
+                       lr=1e-3)
 
 
 def kl_anneal_function(step):

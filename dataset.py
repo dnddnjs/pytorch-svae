@@ -21,7 +21,9 @@ with open('data/ptb.test.txt', 'r') as file:
         tokenized_contents.append(words)
 print('complete tokenize test data')
 
-embedding_model = Word2Vec(tokenized_contents, size=300, window=2,
-                           min_count=1, workers=2, iter=1000, sg=1)
 
-print(embedding_model.most_similar(positive=["negative"], topn=10))
+embedding_model = Word2Vec(tokenized_contents, size=300, window=2,
+                           min_count=1, workers=8, iter=10000, sg=1)
+
+embedding_model.wv.save('model/pretrained_embedding')
+print('train over and saved model')

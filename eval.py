@@ -5,6 +5,7 @@ from ptb import PTB
 from model import SentenceVAE
 from utils import idx2word, interpolate
 from collections import OrderedDict
+from gensim.models import Word2Vec, KeyedVectors
 
 parser = argparse.ArgumentParser(description='Sentence VAE Example')
 
@@ -27,9 +28,11 @@ with open(args.data_dir + '/ptb.vocab.json', 'r') as file:
     vocab = json.load(file)
 
 w2i, i2w = vocab['w2i'], vocab['i2w']
+embedding = KeyedVectors.load('model/pretrained_embedding')
+weights = torch.FloatTensor(embedding.syn0)
 
 model = SentenceVAE(
-    vocab_size=len(w2i),
+    vocab_size=weights.size(0),
     sos_idx=w2i['<sos>'],
     eos_idx=w2i['<eos>'],
     pad_idx=w2i['<pad>']
@@ -47,6 +50,7 @@ print('----------SAMPLES----------')
 for i in range(5):
     sample, z = model.inference()
     sample = sample.cpu().numpy()
+    print(sample)
     print(idx2word(sample, i2w=i2w, pad_idx=w2i['<pad>']), sep='\n')
 
 datasets = OrderedDict()
