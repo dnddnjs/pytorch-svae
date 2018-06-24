@@ -26,6 +26,8 @@ class SentenceVAE(nn.Module):
         self.emb_size = 353
 
         self.emb = nn.Embedding(self.vocab_size, self.emb_size)
+        self.emb.weight = nn.Parameter(torch.FloatTensor(
+            self.vocab_size, self.emb_size).uniform_(-1, 1))
         self.word_dropout = nn.Dropout(p=0.5)
 
         self.encoder_rnn = nn.GRU(self.emb_size, self.h_size, batch_first=True)
@@ -55,12 +57,11 @@ class SentenceVAE(nn.Module):
     def decode(self, z, x_emb):
         h = self.decode_fc1(z)
         h = h.unsqueeze(0)
-
-        x_emb = self.word_dropout(x_emb)
+        # x_emb = self.word_dropout(x_emb)
         out, _ = self.decoder_rnn(x_emb, h)
         logit = self.decode_fc2(out)
-        prob = F.softmax(logit, dim=-1)
-        return prob
+        logit = F.log_softmax(logit, dim=-1)
+        return logit
 
     def forward(self, x):
         mu, logvar, x_emb = self.encode(x)

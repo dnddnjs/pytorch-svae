@@ -56,7 +56,17 @@ eos_idx = datasets['train'].eos_idx
 pad_idx = datasets['train'].pad_idx
 
 model = SentenceVAE(vocab_size, sos_idx, eos_idx, pad_idx, training=True).to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+
+def init_weights(m):
+    if type(m) == torch.nn.Linear:
+        torch.nn.init.xavier_uniform(m.weight)
+        m.bias.data.fill_(0)
+
+model.apply(init_weights)
+
+
+optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 
 def kl_anneal_function(step):
@@ -66,14 +76,14 @@ def kl_anneal_function(step):
     return weight
 
 
-# loss = torch.nn.CrossEntropyLoss(size_average=False)
+criterion = torch.nn.NLLLoss(size_average=False, ignore_index=pad_idx)
 
 
 def loss_function(reconx, x, mu, logvar, step):
     x = x.view(-1)
     reconx = reconx.view(-1, reconx.size(2))
-    NLL_loss = F.cross_entropy(reconx, x, size_average=False)
-
+    print(x[5], torch.argmax(reconx[5]))
+    NLL_loss = criterion(reconx, x)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     beta = kl_anneal_function(step)
     loss = NLL_loss + beta * KLD
