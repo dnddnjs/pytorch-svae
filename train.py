@@ -62,7 +62,6 @@ if args.cuda:
 else:
     weights = torch.FloatTensor(embedding.syn0)
 
-weights.requires_grad = False
 model = SentenceVAE(weights.size(0), sos_idx, eos_idx, pad_idx, training=True).to(device)
 
 
