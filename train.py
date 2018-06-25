@@ -85,7 +85,7 @@ criterion = torch.nn.NLLLoss(size_average=False, ignore_index=pad_idx)
 
 
 def loss_function(reconx, x, mu, logvar, step):
-    print(torch.argmax(torch.exp(reconx), dim=-1)[0][:50])
+    # print(torch.argmax(torch.exp(reconx), dim=-1)[0][:50])
     x = x.view(-1).long()
     reconx = reconx.view(-1, reconx.size(2))
     NLL_loss = criterion(reconx, x)

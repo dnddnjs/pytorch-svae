@@ -22,7 +22,7 @@ with open('data/ptb.test.txt', 'r') as file:
         words = tokenizer.tokenize(line)
         tokenized_contents.append(words)
 print('complete tokenize test data')
-
+tokenized_contents += ['<pad>', '<sos>', '<eos>']
 
 embedding_model = Word2Vec(tokenized_contents, size=300, window=2,
                            min_count=1, workers=8, iter=10, sg=1)
