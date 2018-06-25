@@ -4,10 +4,8 @@ import json
 import numpy as np
 from collections import defaultdict
 from torch.utils.data import Dataset
-from nltk.tokenize import TweetTokenizer
 import random
-
-from utils import OrderedCounter
+import gensim
 
 
 class PTB(Dataset):
@@ -93,14 +91,12 @@ class PTB(Dataset):
         else:
             self._load_vocab()
 
-        tokenizer = TweetTokenizer(preserve_case=False)
-
         data = defaultdict(dict)
         with open(self.raw_data_path, 'r') as file:
 
             for i, line in enumerate(file):
 
-                words = tokenizer.tokenize(line)
+                words = gensim.utils.simple_preprocess(line)
 
                 input = ['<sos>'] + words
                 input = input[:self.max_sequence_length]
@@ -132,8 +128,6 @@ class PTB(Dataset):
 
         assert self.split == 'train', "Vocablurary can only be created for training file."
 
-        tokenizer = TweetTokenizer(preserve_case=False)
-
         words_list = []
         w2i = dict()
         i2w = dict()
@@ -145,7 +139,7 @@ class PTB(Dataset):
 
         with open(self.raw_data_path, 'r') as file:
             for i, line in enumerate(file):
-                words = tokenizer.tokenize(line)
+                words = gensim.utils.simple_preprocess(line)
                 words_list += words
 
             random.shuffle(words_list)
