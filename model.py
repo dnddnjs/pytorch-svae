@@ -39,6 +39,7 @@ class SentenceVAE(nn.Module):
 
     def encode(self, x):
         x_emb = self.emb(x)
+        x_emb.detach()
         _, h = self.encoder_rnn(x_emb)
         h = h.view(h.size(1), h.size(2))
         mu = self.encode_fc1(h)

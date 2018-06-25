@@ -21,7 +21,6 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--data_dir', type=str, default='data')
 parser.add_argument('--create_data', action='store_true')
-parser.add_argument('--min_occ', type=int, default=1)
 
 parser.add_argument('--epochs', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=32)
@@ -47,8 +46,7 @@ for split in splits:
         data_dir=args.data_dir,
         split=split,
         create_data=args.create_data,
-        max_sequence_length=60,
-        min_occ=args.min_occ
+        max_sequence_length=60
     )
 
 # vocab_size = datasets['train'].vocab_size
@@ -73,7 +71,7 @@ def init_weights(m):
 model.apply(init_weights)
 model.emb = nn.Embedding.from_pretrained(weights)
 optimizer = optim.Adam(filter(lambda p: p.requires_grad,model.parameters()),
-                       lr=1e-3)
+                       lr=1e-4, weight_decay=1e-3)
 
 
 def kl_anneal_function(step):
@@ -87,7 +85,8 @@ criterion = torch.nn.NLLLoss(size_average=False, ignore_index=pad_idx)
 
 
 def loss_function(reconx, x, mu, logvar, step):
-    x = x.view(-1)
+    print(torch.argmax(torch.exp(reconx), dim=-1)[0][:50])
+    x = x.view(-1).long()
     reconx = reconx.view(-1, reconx.size(2))
     NLL_loss = criterion(reconx, x)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
